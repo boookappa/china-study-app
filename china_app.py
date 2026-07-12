@@ -163,7 +163,7 @@ else:
                         # "folder_name": target_folder,  <-- ここを target_folder に変更する
                         
                         st.success(f"データをフォルダ【{target_folder}】に保存したぞ！")
-                        st.rerun()
+                        #st.rerun()
                     except Exception as e:
                         st.error(f"保存失敗だ: {e}")
                 else:
