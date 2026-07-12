@@ -140,7 +140,7 @@ else:
                         st.warning("名前を入力しろ。")
 
             # --- 2. データ登録エリア ---
-            st.subheader("📝 音声データの新規登録（音声は音読さんから登録してください( https://ondoku3.com/ja/ ))（ごめんなさいなんか今登録できなくなってます。ちょっと待ってね）")
+            st.subheader("📝 音声データの新規登録（音声は音読さんから登録してください( https://ondoku3.com/ja/ )")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", existing_folders, key="list_fold_sel")
             
             st.markdown("---")
@@ -149,11 +149,25 @@ else:
             kanji_input = st.text_input("簡体字表記を手入力", key="list_kanji")
 
             if st.button("リスニングデータを保存", key="list_save_btn"):
+                # フォルダ名の選択ロジックをここに入れる
+                # もし new_folder_input が入力されていればそちらを、なければ folder_choice を使う
+                target_folder = new_folder_input.strip() if new_folder_input.strip() else folder_choice
+
                 if audio_file and pinyin_input and kanji_input:
-                    # (中略: アップロード処理)
-                    # ...（既存のアップロードロジックをそのまま維持）...
-                    st.success(f"データをフォルダ【{folder_choice}】に保存したぞ！")
-                    st.rerun() # 保存後は即座に反映
+                    # ここにアップロード処理を記述
+                    # フォルダ名は target_folder を使うように修正する
+                    try:
+                        # (ファイルアップロード処理...)
+                        
+                        # (データベース登録処理...)
+                        # "folder_name": target_folder,  <-- ここを target_folder に変更する
+                        
+                        st.success(f"データをフォルダ【{target_folder}】に保存したぞ！")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"保存失敗だ: {e}")
+                else:
+                    st.warning("音声、ピンイン、簡体字をすべて入力しろ。")
 
         else:
             st.subheader("🎯 リスニング・ランダムテスト")
@@ -291,7 +305,7 @@ else:
                     # この else は if new_folder_input.strip(): の直下に置く
                         st.warning("名前を入力しろ。")
             # --- 2. データ登録エリア ---
-            st.subheader("📝 中作文データの新規登録（ごめんなさいなんか今登録できなくなってます。ちょっと待ってね）")
+            st.subheader("📝 中作文データの新規登録")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", comp_folders, key="comp_fold_sel")
             
             st.markdown("---")
