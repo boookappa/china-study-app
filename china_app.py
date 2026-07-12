@@ -168,73 +168,71 @@ else:
         st.markdown("---")
         st.subheader("🎯 リスニング・ランダムテスト")
         # （以降のテストモードのコードをここに書く）
-        else:
-            st.subheader("🎯 リスニング・ランダムテスト")
             # --- 🎯 リスニング・ランダムテスト ---
-            selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
+        selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
             
-            cache_key = f"records_cache_{selected_test_folder}"
-            if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
-                try:
+        cache_key = f"records_cache_{selected_test_folder}"
+        if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
+            try:
                     # ここに .neq("audio_data", "") を追加して空のダミーを除外する
-                    res_records = supabase.table("study_data")\
-                        .select("id, audio_data, pinyin, kanji")\
-                        .eq("username", st.session_state.username)\
-                        .eq("type", "listening")\
-                        .eq("folder_name", selected_test_folder)\
-                        .neq("audio_data", "")\
-                        .execute()
+                res_records = supabase.table("study_data")\
+                    .select("id, audio_data, pinyin, kanji")\
+                    .eq("username", st.session_state.username)\
+                　　.eq("type", "listening")\
+                    .eq("folder_name", selected_test_folder)\
+                    .neq("audio_data", "")\
+                    .execute()
                     
-                    st.session_state[cache_key] = res_records.data if res_records.data else []
-                except Exception:
-                    st.session_state[cache_key] = []
+                st.session_state[cache_key] = res_records.data if res_records.data else []
+            except Exception:
+                st.session_state[cache_key] = []
 
             # (try-exceptの後、if not records: の前)
             
             # もしセッションステートにデータがなければ空リストにする
-            records = st.session_state.get(cache_key, [])
+        records = st.session_state.get(cache_key, [])
 
-            if not records:
-                st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
-            else:
-                # 以降の処理（シャッフルなど）
-                shuffle_session_key = f"list_shuffled_{selected_test_folder}"
-                if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
-                    import random
-                    shuffled_list = list(records)
-                    random.shuffle(shuffled_list)
-                    st.session_state[shuffle_session_key] = shuffled_list
+        if not records:
+            st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
+        else:
+            # 以降の処理（シャッフルなど）
+            shuffle_session_key = f"list_shuffled_{selected_test_folder}"
+            if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
+                import random
+                shuffled_list = list(records)
+                random.shuffle(shuffled_list)
+                st.session_state[shuffle_session_key] = shuffled_list
 
-                for index, record in enumerate(st.session_state[shuffle_session_key]):
-                    rec_id = record["id"]
-                    audio_url = record["audio_data"]
-                    pinyin = record["pinyin"]
-                    kanji = record["kanji"]
+            for index, record in enumerate(st.session_state[shuffle_session_key]):
+                rec_id = record["id"]
+                audio_url = record["audio_data"]
+                pinyin = record["pinyin"]
+                kanji = record["kanji"]
                     
-                    st.markdown(f"---")
-                    col1, col2 = st.columns([6, 1])
-                    with col1:
-                        st.write(f"**🎵 問題 {index + 1}**")
-                    with col2:
-                        if st.button("🗑 削除", key=f"del_list_{rec_id}"):
-                            try:
-                                if f"{BUCKET_NAME}/" in audio_url:
-                                    storage_path = audio_url.split(f"{BUCKET_NAME}/")[-1]
-                                    supabase.storage.from_(BUCKET_NAME).remove([storage_path])
-                                supabase.table("study_data").delete().eq("id", rec_id).execute()
-                                st.toast("削除したぞ！")
-                                st.session_state[cache_key] = [r for r in st.session_state[cache_key] if r["id"] != rec_id]
-                                st.session_state[shuffle_session_key] = [r for r in st.session_state[shuffle_session_key] if r["id"] != rec_id]
-                            except Exception:
-                                st.error("削除失敗。")
+                st.markdown(f"---")
+                col1, col2 = st.columns([6, 1])
+                with col1:
+                    st.write(f"**🎵 問題 {index + 1}**")
+                with col2:
+                    if st.button("🗑 削除", key=f"del_list_{rec_id}"):
+                        try:
+                            if f"{BUCKET_NAME}/" in audio_url:
+                                storage_path = audio_url.split(f"{BUCKET_NAME}/")[-1]
+                                supabase.storage.from_(BUCKET_NAME).remove([storage_path])
+                            supabase.table("study_data").delete().eq("id", rec_id).execute()
+                            st.toast("削除したぞ！")
+                            st.session_state[cache_key] = [r for r in st.session_state[cache_key] if r["id"] != rec_id]
+                            st.session_state[shuffle_session_key] = [r for r in st.session_state[shuffle_session_key] if r["id"] != rec_id]
+                        except Exception:
+                            st.error("削除失敗。")
                     
-                    if audio_url:
-                        st.audio(audio_url, format="audio/mp3")
+                if audio_url:
+                    st.audio(audio_url, format="audio/mp3")
                     
                     # 💡 st.toggle を使って rerun なしで瞬時に答えを出し入れする
-                    if st.toggle("👀 答えを見る", key=f"toggle_list_{rec_id}"):
-                        st.markdown(f"**📌 ピンイン:** `{pinyin}`")
-                        st.markdown(f"**🇨🇳 簡体字:** `{kanji}`")
+                if st.toggle("👀 答えを見る", key=f"toggle_list_{rec_id}"):
+                    st.markdown(f"**📌 ピンイン:** `{pinyin}`")
+                    st.markdown(f"**🇨🇳 簡体字:** `{kanji}`")
 
     # =========================================================================
     # 【📝 2. 中作文・タブ】
