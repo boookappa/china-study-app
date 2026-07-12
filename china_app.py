@@ -157,12 +157,21 @@ else:
 
         else:
             st.subheader("🎯 リスニング・ランダムテスト")
+            # --- 🎯 リスニング・ランダムテスト ---
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
             
             cache_key = f"records_cache_{selected_test_folder}"
             if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
                 try:
-                    res_records = supabase.table("study_data").select("id, audio_data, pinyin, kanji").eq("username", st.session_state.username).eq("type", "listening").eq("folder_name", selected_test_folder).execute()
+                    # ここに .neq("audio_data", "") を追加して空のダミーを除外する
+                    res_records = supabase.table("study_data")\
+                        .select("id, audio_data, pinyin, kanji")\
+                        .eq("username", st.session_state.username)\
+                        .eq("type", "listening")\
+                        .eq("folder_name", selected_test_folder)\
+                        .neq("audio_data", "")\
+                        .execute()
+                    
                     st.session_state[cache_key] = res_records.data if res_records.data else []
                 except Exception:
                     st.session_state[cache_key] = []
@@ -308,17 +317,25 @@ else:
 
         else:
             st.subheader("🎯 中作文・ランダムテスト")
+            
+            # --- 🎯 中作文・ランダムテスト ---
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", comp_folders, key="comp_test_fold_sel")
             
             comp_cache_key = f"comp_cache_{selected_test_folder}"
             if comp_cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="comp_refresh_btn"):
                 try:
-                    res_comp_rec = supabase.table("study_data").select("id, japanese, kanji").eq("username", st.session_state.username).eq("type", "composition").eq("folder_name", selected_test_folder).execute()
+                    # ここでダミーデータ（日本語が空のレコード）を最初から除外する
+                    res_comp_rec = supabase.table("study_data")\
+                        .select("id, japanese, kanji")\
+                        .eq("username", st.session_state.username)\
+                        .eq("type", "composition")\
+                        .eq("folder_name", selected_test_folder)\
+                        .neq("japanese", "")\
+                        .execute()
+                    
                     st.session_state[comp_cache_key] = res_comp_rec.data if res_comp_rec.data else []
                 except Exception:
                     st.session_state[comp_cache_key] = []
-
-            records = st.session_state[comp_cache_key]
 
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
