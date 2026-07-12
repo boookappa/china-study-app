@@ -148,27 +148,26 @@ else:
             pinyin_input = st.text_input("ピンインを手入力", key="list_pinyin")
             kanji_input = st.text_input("簡体字表記を手入力", key="list_kanji")
 
-            if st.button("リスニングデータを保存", key="list_save_btn"):
-                # フォルダ名の選択ロジックをここに入れる
-                # もし new_folder_input が入力されていればそちらを、なければ folder_choice を使う
-                target_folder = new_folder_input.strip() if new_folder_input.strip() else folder_choice
+            # 保存ボタンの処理は独立させる
+        if st.button("リスニングデータを保存", key="list_save_btn"):
+            target_folder = new_folder_input.strip() if new_folder_input.strip() else folder_choice
+            
+            if audio_file and pinyin_input and kanji_input:
+                try:
+                    # 1. ファイルアップロード処理（中略）
+                    # 2. データベース登録処理（中略）
+                    
+                    st.success(f"データをフォルダ【{target_folder}】に保存したぞ！")
+                    st.rerun() 
+                except Exception as e:
+                    st.error(f"保存失敗だ: {e}")
+            else:
+                st.warning("音声、ピンイン、簡体字をすべて入力しろ。")
 
-                if audio_file and pinyin_input and kanji_input:
-                    # ここにアップロード処理を記述
-                    # フォルダ名は target_folder を使うように修正する
-                    try:
-                        # (ファイルアップロード処理...)
-                        
-                        # (データベース登録処理...)
-                        # "folder_name": target_folder,  <-- ここを target_folder に変更する
-                        
-                        st.success(f"データをフォルダ【{target_folder}】に保存したぞ！")
-                        #st.rerun()
-                    except Exception as e:
-                        st.error(f"保存失敗だ: {e}")
-                else:
-                    st.warning("音声、ピンイン、簡体字をすべて入力しろ。")
-
+        # --- ここから下は「保存」とは無関係。常に表示する ---
+        st.markdown("---")
+        st.subheader("🎯 リスニング・ランダムテスト")
+        # （以降のテストモードのコードをここに書く）
         else:
             st.subheader("🎯 リスニング・ランダムテスト")
             # --- 🎯 リスニング・ランダムテスト ---
