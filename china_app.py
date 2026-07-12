@@ -228,6 +228,30 @@ else:
 
         if comp_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（統一されたデザイン） ---
+            # --- 中作文用のフォルダ名変更エリア ---
+            with st.expander("📁 フォルダ名を変更する"):
+                # リスニングと区別するために _comp をつける
+                old_name = st.selectbox("変更したいフォルダを選択", comp_folders, key="rename_old_comp")
+                new_name = st.text_input("新しいフォルダ名を入力", key="rename_new_comp")
+                
+                if st.button("フォルダ名を変更する", key="rename_btn_comp"):
+                    # 「未分類」の変更は防いでおくと安全だ
+                    if old_name == "未分類":
+                        st.warning("「未分類」は名前変更できないぞ。")
+                    elif old_name and new_name.strip():
+                        try:
+                            # 中作文（composition）タイプのみを対象に更新する
+                            supabase.table("study_data").update({"folder_name": new_name.strip()})\
+                                .eq("username", st.session_state.username)\
+                                .eq("type", "composition")\
+                                .eq("folder_name", old_name)\
+                                .execute()
+                            st.success(f"【{old_name}】を【{new_name.strip()}】に変更したぞ！")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"変更失敗だ: {e}")
+                    else:
+                        st.warning("名前を入力しろ。")
             with st.container(border=True):
                 st.subheader("📁 フォルダの新規作成")
                 new_folder_input = st.text_input("新しいフォルダ名を入力", key="comp_fold_new")
