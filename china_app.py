@@ -227,61 +227,56 @@ else:
             comp_folders.append("未分類")
 
         if comp_mode == "データ登録モード":
-            # --- 既存のフォルダを選択して名前を変更するエリア ---
-            # --- 中作文・タブ内 ---
-            with st.expander("📁 フォルダ名を変更する"):
-                # keyを "rename_old_comp" に変更
-                old_name = st.selectbox("変更したいフォルダを選択", comp_folders, key="rename_old_comp")
-                # keyを "rename_new_comp" に変更
-                new_name = st.text_input("新しいフォルダ名を入力", key="rename_new_comp")
-                
-                # keyを "rename_btn_comp" に変更
-                if st.button("フォルダ名を変更する", key="rename_btn_comp"):
-                    # (以下、処理内容は同じでOK)
-                    if old_name == "未分類":
-                        st.warning("「未分類」は名前変更できないぞ。")
-                    elif old_name and new_name.strip():
+            # --- 1. フォルダ管理エリア（統一されたデザイン） ---
+            with st.container(border=True):
+                st.subheader("📁 フォルダの新規作成")
+                new_folder_input = st.text_input("新しいフォルダ名を入力", key="comp_fold_new")
+                if st.button("フォルダを作成", key="create_comp_fold_btn"):
+                    if new_folder_input.strip():
                         try:
-                            # 該当するフォルダ名のレコードをすべて更新する
-                            supabase.table("study_data").update({"folder_name": new_name.strip()})\
-                                .eq("username", st.session_state.username)\
-                                .eq("type", "composition")\
-                                .eq("folder_name", old_name)\
-                                .execute()
-                            st.success(f"【{old_name}】を【{new_name.strip()}】に変更したぞ！")
+                            # フォルダ作成用にダミーレコードを挿入
+                            supabase.table("study_data").insert({
+                                "username": st.session_state.username,
+                                "type": "composition",
+                                "folder_name": new_folder_input.strip(),
+                                "japanese": "（ダミーデータ）",
+                                "kanji": "（ダミーデータ）"
+                            }).execute()
+                            st.success(f"【{new_folder_input}】を作成したぞ！")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"変更失敗だ: {e}")
+                            st.error(f"作成失敗だ: {e}")
                     else:
                         st.warning("名前を入力しろ。")
-                        
+
+            # --- 2. データ登録エリア ---
             st.subheader("📝 中作文データの新規登録")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", comp_folders, key="comp_fold_sel")
-            new_folder_input = st.text_input("または、新しいフォルダ名を入力", key="comp_fold_new")
-            final_folder = new_folder_input.strip() if new_folder_input.strip() else folder_choice
-
+            
             st.markdown("---")
             japanese_input = st.text_area("日本語の文章を手入力（問題）", key="comp_jap")
             kanji_input = st.text_area("中国語の文章（簡体字・ピンインなど）を手入力（解答）", key="comp_kanji")
 
             if st.button("中作文データを保存", key="comp_save_btn"):
+                # ここで「新規入力」と「選択」を判定する
+                target_folder = new_folder_input.strip() if new_folder_input.strip() else folder_choice
+                
                 if japanese_input and kanji_input:
                     new_comp = {
                         "username": st.session_state.username,
                         "type": "composition",
                         "japanese": japanese_input,
                         "kanji": kanji_input,
-                        "folder_name": final_folder
+                        "folder_name": target_folder
                     }
                     try:
                         supabase.table("study_data").insert(new_comp).execute()
-                        st.success(f"データをフォルダ【{final_folder}】に保存したぞ！")
-                        if f"comp_cache_{final_folder}" in st.session_state:
-                            del st.session_state[f"comp_cache_{final_folder}"]
+                        st.success(f"データをフォルダ【{target_folder}】に保存したぞ！")
+                        st.rerun()
                     except Exception:
-                        st.error("データのクラウド保存に失敗したな。")
+                        st.error("保存失敗だ。")
                 else:
-                    st.warning("日本語と中国語の両方を入力してくれ。")
+                    st.warning("日本語と中国語の両方を入力しろ。")
 
         else:
             st.subheader("🎯 中作文・ランダムテスト")
