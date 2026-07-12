@@ -176,11 +176,15 @@ else:
                 except Exception:
                     st.session_state[cache_key] = []
 
-            records = st.session_state[cache_key]
+            # (try-exceptの後、if not records: の前)
+            
+            # もしセッションステートにデータがなければ空リストにする
+            records = st.session_state.get(cache_key, [])
 
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
             else:
+                # 以降の処理（シャッフルなど）
                 shuffle_session_key = f"list_shuffled_{selected_test_folder}"
                 if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
                     import random
@@ -336,7 +340,8 @@ else:
                     st.session_state[comp_cache_key] = res_comp_rec.data if res_comp_rec.data else []
                 except Exception:
                     st.session_state[comp_cache_key] = []
-
+            # ... try-except の後の行 ...
+            records = st.session_state.get(comp_cache_key, [])
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
             else:
