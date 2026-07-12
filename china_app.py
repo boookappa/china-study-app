@@ -89,7 +89,7 @@ else:
         if "未分類" not in existing_folders:
             existing_folders.append("未分類")
 
-        if listening_mode == "データ登録モード（ごめんなさいなんか今登録できなくなってます。ちょっと待ってね）":
+        if listening_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（独立） ---
             # --- 既存のフォルダを選択して名前を変更するエリア ---
             # --- リスニング・タブ内 ---
@@ -239,7 +239,7 @@ else:
         if "未分類" not in comp_folders:
             comp_folders.append("未分類")
 
-        if comp_mode == "データ登録モード（ごめんなさいなんか今登録できなくなってます。ちょっと待ってね）":
+        if comp_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（統一されたデザイン） ---
             # --- 中作文用のフォルダ名変更エリア ---
             with st.expander("📁 フォルダ名を変更する"):
