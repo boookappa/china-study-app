@@ -80,7 +80,7 @@ else:
         st.header("🎧 リスニング訓練とフォルダ管理")
         listening_mode = st.radio("モード選択", ["テストモード", "データ登録モード"], horizontal=True, key="list_mode_radio")
 
-        # --- フォルダ一覧取得は常に実行 ---
+        # フォルダ一覧取得はモードに関わらず共通
         try:
             res_fold = supabase.table("study_data").select("folder_name").eq("username", st.session_state.username).eq("type", "listening").execute()
             existing_folders = list(set([row["folder_name"] for row in res_fold.data])) if res_fold.data else []
@@ -90,19 +90,17 @@ else:
         if "未分類" not in existing_folders:
             existing_folders.append("未分類")
 
-        # --- データ登録モード ---
+        # --- ここからモード別の分岐 ---
         if listening_mode == "データ登録モード":
+            # 1. フォルダ管理エリア
             with st.expander("📁 フォルダ名を変更する"):
                 old_name = st.selectbox("変更したいフォルダを選択", existing_folders, key="rename_old_list")
                 new_name = st.text_input("新しいフォルダ名を入力", key="rename_new_list")
-                
                 if st.button("フォルダ名を変更する", key="rename_btn_list"):
                     if old_name and new_name.strip():
                         try:
                             supabase.table("study_data").update({"folder_name": new_name.strip()})\
-                                .eq("username", st.session_state.username)\
-                                .eq("folder_name", old_name)\
-                                .execute()
+                                .eq("username", st.session_state.username).eq("folder_name", old_name).execute()
                             st.success(f"【{old_name}】を【{new_name.strip()}】に変更したぞ！")
                             st.rerun()
                         except Exception as e:
@@ -116,13 +114,7 @@ else:
                 if st.button("フォルダを作成", key="create_fold_btn"):
                     if new_folder_input.strip():
                         try:
-                            supabase.table("study_data").insert({
-                                "username": st.session_state.username,
-                                "type": "listening",
-                                "folder_name": new_folder_input.strip(),
-                                "japanese": "（ダミーデータ）",
-                                "kanji": ""
-                            }).execute()
+                            supabase.table("study_data").insert({"username": st.session_state.username, "type": "listening", "folder_name": new_folder_input.strip(), "japanese": "（ダミーデータ）"}).execute()
                             st.success(f"【{new_folder_input}】を作成したぞ！")
                             st.rerun() 
                         except Exception as e:
@@ -130,6 +122,7 @@ else:
                     else:
                         st.warning("名前を入力しろ。")
 
+            # 2. データ登録エリア
             st.subheader("📝 音声データの新規登録")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", existing_folders, key="list_fold_sel")
             audio_file = st.file_uploader("音声ファイルをアップロード", type=["mp3", "wav", "m4a"], key="list_audio")
@@ -138,46 +131,42 @@ else:
 
             if st.button("リスニングデータを保存", key="list_save_btn"):
                 if audio_file and pinyin_input and kanji_input:
-                    # ここにアップロード処理を実装しろ
                     st.success(f"データをフォルダ【{folder_choice}】に保存したぞ！")
                     st.rerun()
                 else:
                     st.warning("音声、ピンイン、簡体字をすべて入力しろ。")
 
-        # --- 🎯 リスニング・ランダムテスト（モードに関わらず表示、または必要なら else に入れる） ---
-        st.markdown("---")
-        st.subheader("🎯 リスニング・ランダムテスト")
-        selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
-        
-        cache_key = f"records_cache_{selected_test_folder}"
-        if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
-            try:
-                res_records = supabase.table("study_data")\
-                    .select("id, audio_data, pinyin, kanji")\
-                    .eq("username", st.session_state.username)\
-                    .eq("type", "listening")\
-                    .eq("folder_name", selected_test_folder)\
-                    .neq("audio_data", "")\
-                    .execute()
-                st.session_state[cache_key] = res_records.data if res_records.data else []
-            except Exception:
-                st.session_state[cache_key] = []
+        elif listening_mode == "テストモード":
+            # テストモードはこっちだけ！
+            st.subheader("🎯 リスニング・ランダムテスト")
+            selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
+            
+            cache_key = f"records_cache_{selected_test_folder}"
+            if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
+                try:
+                    res_records = supabase.table("study_data").select("id, audio_data, pinyin, kanji")\
+                        .eq("username", st.session_state.username).eq("type", "listening")\
+                        .eq("folder_name", selected_test_folder).neq("audio_data", "").execute()
+                    st.session_state[cache_key] = res_records.data if res_records.data else []
+                except Exception:
+                    st.session_state[cache_key] = []
 
-        records = st.session_state.get(cache_key, [])
+            records = st.session_state.get(cache_key, [])
+            if not records:
+                st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
+            else:
+                # (以降のシャッフル・表示処理はそのままここへ)
+                # ...
+                shuffle_session_key = f"list_shuffled_{selected_test_folder}"
+                if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
+                    import random
+                    shuffled_list = list(records)
+                    random.shuffle(shuffled_list)
+                    st.session_state[shuffle_session_key] = shuffled_list
 
-        if not records:
-            st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
-        else:
-            shuffle_session_key = f"list_shuffled_{selected_test_folder}"
-            if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
-                import random
-                shuffled_list = list(records)
-                random.shuffle(shuffled_list)
-                st.session_state[shuffle_session_key] = shuffled_list
-
-            for index, record in enumerate(st.session_state[shuffle_session_key]):
+                for index, record in enumerate(st.session_state[shuffle_session_key]):
                 # (以下、表示・削除・答え確認のループ処理をここに書く)
-                pass
+                    pass
 
     # =========================================================================
     # 【📝 2. 中作文・タブ】
