@@ -252,27 +252,31 @@ else:
                             st.error(f"変更失敗だ: {e}")
                     else:
                         st.warning("名前を入力しろ。")
-            with st.container(border=True):
+                   
+            
+　　　　　　 with st.container(border=True):
                 st.subheader("📁 フォルダの新規作成")
                 new_folder_input = st.text_input("新しいフォルダ名を入力", key="comp_fold_new")
+            
                 if st.button("フォルダを作成", key="create_comp_fold_btn"):
                     if new_folder_input.strip():
                         try:
-                            # フォルダ作成用にダミーレコードを挿入
+                        # データベースへ登録
                             supabase.table("study_data").insert({
                                 "username": st.session_state.username,
                                 "type": "composition",
                                 "folder_name": new_folder_input.strip(),
-                                "japanese": "（ダミーデータ）",
-                                "kanji": "（ダミーデータ）"
+                                "japanese": "",
+                                "kanji": ""
                             }).execute()
+                        
                             st.success(f"【{new_folder_input}】を作成したぞ！")
                             st.rerun()
                         except Exception as e:
                             st.error(f"作成失敗だ: {e}")
-                    else:
+                    else: 
+                    # この else は if new_folder_input.strip(): の直下に置く
                         st.warning("名前を入力しろ。")
-
             # --- 2. データ登録エリア ---
             st.subheader("📝 中作文データの新規登録")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", comp_folders, key="comp_fold_sel")
