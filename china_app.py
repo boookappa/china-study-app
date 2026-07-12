@@ -92,11 +92,16 @@ else:
         if listening_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（独立） ---
             # --- 既存のフォルダを選択して名前を変更するエリア ---
+            # --- リスニング・タブ内 ---
             with st.expander("📁 フォルダ名を変更する"):
-                old_name = st.selectbox("変更したいフォルダを選択", existing_folders, key="rename_old")
-                new_name = st.text_input("新しいフォルダ名を入力", key="rename_new")
+                # keyを "rename_old_list" に変更
+                old_name = st.selectbox("変更したいフォルダを選択", existing_folders, key="rename_old_list")
+                # keyを "rename_new_list" に変更
+                new_name = st.text_input("新しいフォルダ名を入力", key="rename_new_list")
                 
-                if st.button("フォルダ名を変更する", key="rename_btn"):
+                # keyを "rename_btn_list" に変更
+                if st.button("フォルダ名を変更する", key="rename_btn_list"):
+                    # (以下、処理内容は同じでOK)
                     if old_name and new_name.strip():
                         try:
                             # 該当するフォルダ名のレコードをすべて更新する
@@ -223,13 +228,16 @@ else:
 
         if comp_mode == "データ登録モード":
             # --- 既存のフォルダを選択して名前を変更するエリア ---
+            # --- 中作文・タブ内 ---
             with st.expander("📁 フォルダ名を変更する"):
-                # ここを comp_folders に修正だ！
-                old_name = st.selectbox("変更したいフォルダを選択", comp_folders, key="rename_old")
-                new_name = st.text_input("新しいフォルダ名を入力", key="rename_new")
+                # keyを "rename_old_comp" に変更
+                old_name = st.selectbox("変更したいフォルダを選択", comp_folders, key="rename_old_comp")
+                # keyを "rename_new_comp" に変更
+                new_name = st.text_input("新しいフォルダ名を入力", key="rename_new_comp")
                 
-                if st.button("フォルダ名を変更する", key="rename_btn"):
-                    # 「未分類」は変更させないようにガードを入れるのが賢明だ
+                # keyを "rename_btn_comp" に変更
+                if st.button("フォルダ名を変更する", key="rename_btn_comp"):
+                    # (以下、処理内容は同じでOK)
                     if old_name == "未分類":
                         st.warning("「未分類」は名前変更できないぞ。")
                     elif old_name and new_name.strip():
