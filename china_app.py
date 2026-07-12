@@ -1,106 +1,76 @@
 import streamlit as st
-import sqlite3
 import hashlib
+from supabase import create_client, Client
 
-# 1. データベースの初期設定
-def init_db():
-    conn = sqlite3.connect('china_study.db', check_same_thread=False)
-    c = conn.cursor()
-    # ユーザー管理テーブル
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            username TEXT PRIMARY KEY, 
-            password TEXT
-        )
-    ''')
-    # 学習データ管理テーブル
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS study_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            type TEXT,        -- 'listening' または 'composition'
-            audio_data BLOB,  -- 音声のバイナリデータ
-            pinyin TEXT,
-            kanji TEXT,
-            japanese TEXT,
-            folder_name TEXT DEFAULT '未分類'
-        )
-    ''')
-    conn.commit()
-    return conn
+# --- Supabase接続設定 ---
+SUPABASE_URL = "https://wcpxdepygveewjsqiuva.supabase.co"
+SUPABASE_KEY = "sb_publishable_Sy2Saem3PgUn7S98sSGDLA_4Y2sm1SY"
 
-conn = init_db()
-c = conn.cursor()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+BUCKET_NAME = "audio-bucket"
 
-# パスワードを暗号化（ハッシュ化）する関数
 def hash_password(password):
-    return hashlib.sha256(str.encode(password)).hexdigest()
+    return hashlib.sha256(password.encode()).hexdigest()
 
-# セッション状態（ログイン状態）の初期化
-if "logged_in" not in st.session_state:
+if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
+if 'username' not in st.session_state:
+    st.session_state.username = None
 
-# --- 画面の構築 ---
-st.title("🇨🇳 中国語学習マスターアプリ")
+def login_user(username, password):
+    hashed_pwd = hash_password(password)
+    try:
+        response = supabase.table("users").select("*").eq("username", username).execute()
+        if response.data and response.data[0]["password"] == hashed_pwd:
+            return True
+        return False
+    except Exception:
+        return False
 
-# ログインしていない場合の画面
+def register_user(username, password):
+    hashed_pwd = hash_password(password)
+    try:
+        supabase.table("users").insert({"username": username, "password": hashed_pwd}).execute()
+        return True
+    except Exception:
+        return False
+
+# ログイン画面
 if not st.session_state.logged_in:
     st.info("💡 既にアカウントがある場合は左側からログイン、初めての場合は右側からアカウントを作成してくれ。")
-    
-    # 画面を綺麗に2つに分割する
     col_login, col_register = st.columns(2)
 
-    # --- 左側：ログインエリア ---
     with col_login:
         st.markdown("### 🔓 ログイン")
         username = st.text_input("ユーザー名", key="login_user")
         password = st.text_input("パスワード", type='password', key="login_pwd")
-        
         if st.button("ログインする", key="login_btn", use_container_width=True):
-            if username and password:
-                hashed_pwd = hash_password(password)
-                c.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, hashed_pwd))
-                result = c.fetchone()
-                
-                if result:
-                    st.session_state.logged_in = True
-                    st.session_state.username = username
-                    st.success(f"ログイン成功だ。ようこそ、{username}！")
-                    st.rerun()
-                else:
-                    st.error("ユーザー名かパスワードが間違っているぞ。")
+            if username and password and login_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success(f"ログイン成功だ。")
+                st.rerun()  # 画面切り替え時のみ使用
             else:
-                st.warning("ユーザー名とパスワードを入力してくれ。")
+                st.error("ユーザー名かパスワードが間違っているか、未入力だぞ。")
 
-    # --- 右側：アカウント作成エリア ---
     with col_register:
         st.markdown("### 👤 アカウント新規作成")
         new_user = st.text_input("希望するユーザー名（重複不可）", key="reg_user")
         new_password = st.text_input("パスワードを設定", type='password', key="reg_pwd")
-        
         if st.button("新しくアカウントを作る", key="register_btn", use_container_width=True):
-            if new_user and new_password:
-                hashed_pwd = hash_password(new_password)
-                try:
-                    c.execute('INSERT INTO users (username, password) VALUES (?,?)', (new_user, hashed_pwd))
-                    conn.commit()
-                    st.success(f"アカウント【{new_user}】を作成したぞ！左側のログインから入るんだ。")
-                except sqlite3.IntegrityError:
-                    st.error("そのユーザー名は既に使われているぞ。別の名前にしろ。")
+            if new_user and new_password and register_user(new_user, new_password):
+                st.success(f"アカウント【{new_user}】を作成したぞ！左側からログインしろ。")
             else:
-                st.warning("登録するユーザー名とパスワードを入力してくれ。")
+                st.error("登録失敗、または入力漏れだ。")
 
-# ログインに成功した場合のメイン画面
+# メイン画面
 else:
     st.sidebar.markdown(f"**ログイン中: {st.session_state.username}**")
     if st.sidebar.button("ログアウト"):
         st.session_state.logged_in = False
-        st.session_state.username = ""
+        st.session_state.username = None
         st.rerun()
 
-    # 機能別のタブを作成
     tab1, tab2 = st.tabs(["🎧 リスニング・タブ", "📝 中作文・タブ"])
 
     # =========================================================================
@@ -110,48 +80,71 @@ else:
         st.header("🎧 リスニング訓練とフォルダ管理")
         listening_mode = st.radio("モード選択", ["テストモード", "データ登録モード"], horizontal=True, key="list_mode_radio")
 
-        # 既存フォルダ名一覧の取得
-        c.execute("SELECT DISTINCT folder_name FROM study_data WHERE username = ? AND type = 'listening'", (st.session_state.username,))
-        existing_folders = [row[0] for row in c.fetchall()]
+        try:
+            res_fold = supabase.table("study_data").select("folder_name").eq("username", st.session_state.username).eq("type", "listening").execute()
+            existing_folders = list(set([row["folder_name"] for row in res_fold.data])) if res_fold.data else []
+        except Exception:
+            existing_folders = []
+            
         if "未分類" not in existing_folders:
             existing_folders.append("未分類")
 
-        # 【データ登録モード】
         if listening_mode == "データ登録モード":
-            st.subheader("📝 音声データの新規登録")
+            st.subheader("📝 音声データの新規登録（音声は音読さんからダウンロードhttps://ondoku3.com/ja/）")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", existing_folders, key="list_fold_sel")
             new_folder_input = st.text_input("または、新しいフォルダ名を入力", key="list_fold_new")
             final_folder = new_folder_input.strip() if new_folder_input.strip() else folder_choice
 
             st.markdown("---")
-            audio_file = st.file_uploader("音声ファイルをアップロード（mp3, wavなど）", type=["mp3", "wav", "m4a"], key="list_audio")
+            audio_file = st.file_uploader("音声ファイルをアップロード", type=["mp3", "wav", "m4a"], key="list_audio")
             pinyin_input = st.text_input("ピンインを手入力", key="list_pinyin")
             kanji_input = st.text_input("簡体字表記を手入力", key="list_kanji")
 
             if st.button("リスニングデータを保存", key="list_save_btn"):
                 if audio_file and pinyin_input and kanji_input:
                     audio_bytes = audio_file.read()
-                    c.execute('''
-                        INSERT INTO study_data (username, type, audio_data, pinyin, kanji, folder_name)
-                        VALUES (?, 'listening', ?, ?, ?, ?)
-                    ''', (st.session_state.username, audio_bytes, pinyin_input, kanji_input, final_folder))
-                    conn.commit()
-                    st.success(f"データをフォルダ【{final_folder}】に保存したぞ！")
-                    st.rerun()
+                    import time
+                    storage_path = f"{st.session_state.username}/{int(time.time())}_{audio_file.name}"
+                    
+                    try:
+                        supabase.storage.from_(BUCKET_NAME).upload(
+                            path=storage_path,
+                            file=audio_bytes,
+                            file_options={"content_type": audio_file.type}
+                        )
+                        audio_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+                        
+                        new_record = {
+                            "username": st.session_state.username,
+                            "type": "listening",
+                            "audio_data": audio_url,
+                            "pinyin": pinyin_input,
+                            "kanji": kanji_input,
+                            "folder_name": final_folder
+                        }
+                        supabase.table("study_data").insert(new_record).execute()
+                        st.success(f"データをフォルダ【{final_folder}】に保存したぞ！")
+                        # 登録時のみキャッシュをクリアして再読み込みさせる
+                        if f"records_cache_{final_folder}" in st.session_state:
+                            del st.session_state[f"records_cache_{final_folder}"]
+                    except Exception as e:
+                        st.error(f"保存に失敗。エラー詳細: {e}")
                 else:
                     st.warning("すべての項目を入力してくれ。")
 
-        # 【テストモード】
         else:
             st.subheader("🎯 リスニング・ランダムテスト")
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
             
-            c.execute('''
-                SELECT id, audio_data, pinyin, kanji 
-                FROM study_data 
-                WHERE username = ? AND type = 'listening' AND folder_name = ?
-            ''', (st.session_state.username, selected_test_folder))
-            records = c.fetchall()
+            cache_key = f"records_cache_{selected_test_folder}"
+            if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
+                try:
+                    res_records = supabase.table("study_data").select("id, audio_data, pinyin, kanji").eq("username", st.session_state.username).eq("type", "listening").eq("folder_name", selected_test_folder).execute()
+                    st.session_state[cache_key] = res_records.data if res_records.data else []
+                except Exception:
+                    st.session_state[cache_key] = []
+
+            records = st.session_state[cache_key]
 
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
@@ -162,40 +155,37 @@ else:
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
                     st.session_state[shuffle_session_key] = shuffled_list
-                    st.rerun()
 
                 for index, record in enumerate(st.session_state[shuffle_session_key]):
-                    rec_id, audio_bytes, pinyin, kanji = record
-                    st.markdown(f"---")
+                    rec_id = record["id"]
+                    audio_url = record["audio_data"]
+                    pinyin = record["pinyin"]
+                    kanji = record["kanji"]
                     
-                    # レイアウトを整えるため列を分ける（問題番号と削除ボタン）
+                    st.markdown(f"---")
                     col1, col2 = st.columns([6, 1])
                     with col1:
                         st.write(f"**🎵 問題 {index + 1}**")
                     with col2:
                         if st.button("🗑 削除", key=f"del_list_{rec_id}"):
-                            c.execute("DELETE FROM study_data WHERE id = ?", (rec_id,))
-                            conn.commit()
-                            st.toast("データを削除したぞ！")
-                            st.session_state[shuffle_session_key] = [r for r in st.session_state[shuffle_session_key] if r[0] != rec_id]
-                            st.rerun()
+                            try:
+                                if f"{BUCKET_NAME}/" in audio_url:
+                                    storage_path = audio_url.split(f"{BUCKET_NAME}/")[-1]
+                                    supabase.storage.from_(BUCKET_NAME).remove([storage_path])
+                                supabase.table("study_data").delete().eq("id", rec_id).execute()
+                                st.toast("削除したぞ！")
+                                st.session_state[cache_key] = [r for r in st.session_state[cache_key] if r["id"] != rec_id]
+                                st.session_state[shuffle_session_key] = [r for r in st.session_state[shuffle_session_key] if r["id"] != rec_id]
+                            except Exception:
+                                st.error("削除失敗。")
                     
-                    st.audio(audio_bytes, format="audio/mp3")
+                    if audio_url:
+                        st.audio(audio_url, format="audio/mp3")
                     
-                    show_ans_key = f"show_ans_listening_{rec_id}"
-                    if show_ans_key not in st.session_state:
-                        st.session_state[show_ans_key] = False
-
-                    if not st.session_state[show_ans_key]:
-                        if st.button("👀 答えを見る", key=f"btn_show_{rec_id}"):
-                            st.session_state[show_ans_key] = True
-                            st.rerun()
-                    else:
+                    # 💡 st.toggle を使って rerun なしで瞬時に答えを出し入れする
+                    if st.toggle("👀 答えを見る", key=f"toggle_list_{rec_id}"):
                         st.markdown(f"**📌 ピンイン:** `{pinyin}`")
                         st.markdown(f"**🇨🇳 簡体字:** `{kanji}`")
-                        if st.button("🙈 答えを隠す", key=f"btn_hide_{rec_id}"):
-                            st.session_state[show_ans_key] = False
-                            st.rerun()
 
     # =========================================================================
     # 【📝 2. 中作文・タブ】
@@ -204,13 +194,15 @@ else:
         st.header("📝 中作文訓練（日中紐づけクイズ）")
         comp_mode = st.radio("モード選択", ["テストモード", "データ登録モード"], horizontal=True, key="comp_mode_radio")
 
-        # 既存フォルダ名一覧の取得
-        c.execute("SELECT DISTINCT folder_name FROM study_data WHERE username = ? AND type = 'composition'", (st.session_state.username,))
-        comp_folders = [row[0] for row in c.fetchall()]
+        try:
+            res_comp_fold = supabase.table("study_data").select("folder_name").eq("username", st.session_state.username).eq("type", "composition").execute()
+            comp_folders = list(set([row["folder_name"] for row in res_comp_fold.data])) if res_comp_fold.data else []
+        except Exception:
+            comp_folders = []
+            
         if "未分類" not in comp_folders:
             comp_folders.append("未分類")
 
-        # 【データ登録モード】
         if comp_mode == "データ登録モード":
             st.subheader("📝 中作文データの新規登録")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", comp_folders, key="comp_fold_sel")
@@ -223,41 +215,51 @@ else:
 
             if st.button("中作文データを保存", key="comp_save_btn"):
                 if japanese_input and kanji_input:
-                    c.execute('''
-                        INSERT INTO study_data (username, type, japanese, kanji, folder_name)
-                        VALUES (?, 'composition', ?, ?, ?)
-                    ''', (st.session_state.username, japanese_input, kanji_input, final_folder))
-                    conn.commit()
-                    st.success(f"データをフォルダ【{final_folder}】に保存したぞ！")
-                    st.rerun()
+                    new_comp = {
+                        "username": st.session_state.username,
+                        "type": "composition",
+                        "japanese": japanese_input,
+                        "kanji": kanji_input,
+                        "folder_name": final_folder
+                    }
+                    try:
+                        supabase.table("study_data").insert(new_comp).execute()
+                        st.success(f"データをフォルダ【{final_folder}】に保存したぞ！")
+                        if f"comp_cache_{final_folder}" in st.session_state:
+                            del st.session_state[f"comp_cache_{final_folder}"]
+                    except Exception:
+                        st.error("データのクラウド保存に失敗したな。")
                 else:
                     st.warning("日本語と中国語の両方を入力してくれ。")
 
-        # 【テストモード】
         else:
             st.subheader("🎯 中作文・ランダムテスト")
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", comp_folders, key="comp_test_fold_sel")
             
-            c.execute('''
-                SELECT id, japanese, kanji 
-                FROM study_data 
-                WHERE username = ? AND type = 'composition' AND folder_name = ?
-            ''', (st.session_state.username, selected_test_folder))
-            records = c.fetchall()
+            comp_cache_key = f"comp_cache_{selected_test_folder}"
+            if comp_cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="comp_refresh_btn"):
+                try:
+                    res_comp_rec = supabase.table("study_data").select("id, japanese, kanji").eq("username", st.session_state.username).eq("type", "composition").eq("folder_name", selected_test_folder).execute()
+                    st.session_state[comp_cache_key] = res_comp_rec.data if res_comp_rec.data else []
+                except Exception:
+                    st.session_state[comp_cache_key] = []
+
+            records = st.session_state[comp_cache_key]
 
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
             else:
-                shuffle_session_key = f"comp_shuffled_{selected_test_folder}"
-                if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="comp_shuf_btn"):
+                comp_shuffle_key = f"comp_shuffled_{selected_test_folder}"
+                if comp_shuffle_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="comp_shuf_btn"):
                     import random
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
-                    st.session_state[shuffle_session_key] = shuffled_list
-                    st.rerun()
+                    st.session_state[comp_shuffle_key] = shuffled_list
 
-                for index, record in enumerate(st.session_state[shuffle_session_key]):
-                    rec_id, japanese, kanji = record
+                for index, record in enumerate(st.session_state[comp_shuffle_key]):
+                    rec_id = record["id"]
+                    japanese = record["japanese"]
+                    kanji = record["kanji"]
                     st.markdown(f"---")
                     
                     col1, col2 = st.columns([6, 1])
@@ -265,24 +267,16 @@ else:
                         st.write(f"**📝 問題 {index + 1}**")
                     with col2:
                         if st.button("🗑 削除", key=f"del_comp_{rec_id}"):
-                            c.execute("DELETE FROM study_data WHERE id = ?", (rec_id,))
-                            conn.commit()
-                            st.toast("データを削除したぞ！")
-                            st.session_state[shuffle_session_key] = [r for r in st.session_state[shuffle_session_key] if r[0] != rec_id]
-                            st.rerun()
+                            try:
+                                supabase.table("study_data").delete().eq("id", rec_id).execute()
+                                st.toast("削除したぞ！")
+                                st.session_state[comp_cache_key] = [r for r in st.session_state[comp_cache_key] if r["id"] != rec_id]
+                                st.session_state[comp_shuffle_key] = [r for r in st.session_state[comp_shuffle_key] if r["id"] != rec_id]
+                            except Exception:
+                                st.error("削除失敗。")
 
                     st.info(f"**日本語:** {japanese}")
                     
-                    show_ans_key = f"show_ans_comp_{rec_id}"
-                    if show_ans_key not in st.session_state:
-                        st.session_state[show_ans_key] = False
-
-                    if not st.session_state[show_ans_key]:
-                        if st.button("👀 答えを見る", key=f"btn_show_comp_{rec_id}"):
-                            st.session_state[show_ans_key] = True
-                            st.rerun()
-                    else:
+                    # 💡 ここも st.toggle に変更して爆速化
+                    if st.toggle("👀 答えを見る", key=f"toggle_comp_{rec_id}"):
                         st.success(f"**🇨🇳 中国語:**\n{kanji}")
-                        if st.button("🙈 答えを隠す", key=f"btn_hide_comp_{rec_id}"):
-                            st.session_state[show_ans_key] = False
-                            st.rerun()
