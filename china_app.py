@@ -214,15 +214,20 @@ else:
         if comp_mode == "データ登録モード":
             # --- 既存のフォルダを選択して名前を変更するエリア ---
             with st.expander("📁 フォルダ名を変更する"):
-                old_name = st.selectbox("変更したいフォルダを選択", existing_folders, key="rename_old")
+                # ここを comp_folders に修正だ！
+                old_name = st.selectbox("変更したいフォルダを選択", comp_folders, key="rename_old")
                 new_name = st.text_input("新しいフォルダ名を入力", key="rename_new")
                 
                 if st.button("フォルダ名を変更する", key="rename_btn"):
-                    if old_name and new_name.strip():
+                    # 「未分類」は変更させないようにガードを入れるのが賢明だ
+                    if old_name == "未分類":
+                        st.warning("「未分類」は名前変更できないぞ。")
+                    elif old_name and new_name.strip():
                         try:
                             # 該当するフォルダ名のレコードをすべて更新する
                             supabase.table("study_data").update({"folder_name": new_name.strip()})\
                                 .eq("username", st.session_state.username)\
+                                .eq("type", "composition")\
                                 .eq("folder_name", old_name)\
                                 .execute()
                             st.success(f"【{old_name}】を【{new_name.strip()}】に変更したぞ！")
