@@ -254,7 +254,7 @@ else:
                         st.warning("名前を入力しろ。")
                    
             
-　　　　　　 with st.container(border=True):
+            with st.container(border=True):
                 st.subheader("📁 フォルダの新規作成")
                 new_folder_input = st.text_input("新しいフォルダ名を入力", key="comp_fold_new")
             
