@@ -140,7 +140,7 @@ else:
                         st.warning("名前を入力しろ。")
 
             # --- 2. データ登録エリア ---
-            st.subheader("📝 音声データの新規登録（音声は音読さんから登録してください( https://ondoku3.com/ja/ )")
+            st.subheader("📝 音声データの新規登録（音声は音読さんから登録してください( https://ondoku3.com/ja/ ))（ごめんなさいなんか今登録できなくなってます。ちょっと待ってね）")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", existing_folders, key="list_fold_sel")
             
             st.markdown("---")
@@ -291,7 +291,7 @@ else:
                     # この else は if new_folder_input.strip(): の直下に置く
                         st.warning("名前を入力しろ。")
             # --- 2. データ登録エリア ---
-            st.subheader("📝 中作文データの新規登録")
+            st.subheader("📝 中作文データの新規登録（ごめんなさいなんか今登録できなくなってます。ちょっと待ってね）")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", comp_folders, key="comp_fold_sel")
             
             st.markdown("---")
