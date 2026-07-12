@@ -116,11 +116,21 @@ else:
                 new_folder_input = st.text_input("新しいフォルダ名を入力", key="list_fold_new")
                 if st.button("フォルダを作成", key="create_fold_btn"):
                     if new_folder_input.strip():
-                        # ここで空のレコードを一つ入れてダミー登録しておくのが確実だ
-                        # もしくは単にst.session_stateを更新するだけでもいいが、
-                        # 確実に反映させるならここでダミー保存してしまうのが一番早い
-                        st.success(f"【{new_folder_input}】を作成したぞ！")
-                        st.rerun() # ここだけはフォルダ作成の瞬間の反映に使う
+                        # ダミーデータを一つ入れてデータベースに確定させるのが一番確実だ
+                        # フォルダ名だけが存在するレコードを一つ作成する
+                        try:
+                            supabase.table("study_data").insert({
+                                "username": st.session_state.username,
+                                "type": "listening", # または中作文なら"composition"
+                                "folder_name": new_folder_input.strip(),
+                                "japanese": "（ダミーデータ）" # 空だとエラーになる場合は何か入れる
+                            }).execute()
+                            
+                            st.success(f"【{new_folder_input}】を作成したぞ！")
+                            # ここで即座に再読み込み！
+                            st.rerun() 
+                        except Exception as e:
+                            st.error(f"作成失敗だ: {e}")
                     else:
                         st.warning("名前を入力しろ。")
 
