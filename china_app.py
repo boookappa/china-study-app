@@ -77,8 +77,8 @@ else:
     # 【🎧 1. リスニング・タブ】
     # =========================================================================
     with tab1:
-        st.header("🎧 リスニング訓練とフォルダ管理")
-        listening_mode = st.radio("モード選択", ["テストモード", "データ登録モード"], horizontal=True, key="list_mode_radio")
+    　　st.header("🎧 リスニング訓練とフォルダ管理")
+    　　listening_mode = st.radio("モード選択", ["テストモード", "データ登録モード"], horizontal=True, key="list_mode_radio")
 
         # --- フォルダ一覧取得は常に実行 ---
         try:
