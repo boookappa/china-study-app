@@ -210,17 +210,19 @@ else:
                     st.markdown("---")
                     st.write(f"**🎵 問題 {index + 1}**")
                     
-                    # --- ここから差し替え ---
-                    audio_val = record.get("audio_data")
-                    # URLやパスっぽければ再生、そうでなければ警告を出す
-                    if audio_val and isinstance(audio_val, str) and (audio_val.startswith("http") or audio_val.startswith("/")):
-                        st.audio(audio_val, format="audio/mp3")
-                    else:
-                        st.warning(f"この問題には有効な音声データがないぞ（データ: {audio_val}）")
-                    # --- ここまで ---
-                        
+                    # 音声再生
+                    st.audio(record["audio_data"], format="audio/mp3")
                     st.write(f"📌 ピンイン: {record.get('pinyin')}")
                     st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
+                    
+                    # --- 削除ボタンの追加 ---
+                    if st.button(f"🗑️ このデータを削除", key=f"del_{record['id']}"):
+                        try:
+                            supabase.table("study_data").delete().eq("id", record["id"]).execute()
+                            st.success("削除したぞ！")
+                            st.rerun() # 画面を更新して消す
+                        except Exception as e:
+                            st.error(f"削除失敗だ: {e}")
 
     # =========================================================================
     # 【📝 2. 中作文・タブ】
