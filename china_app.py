@@ -266,6 +266,24 @@ else:
 
         if comp_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（統一されたデザイン） ---
+            with st.expander("🗑️ フォルダを削除する"):
+                del_comp_folder = st.selectbox("削除したいフォルダを選択", comp_folders, key="del_comp_folder_sel")
+                if st.button("フォルダを削除", key="delete_comp_folder_btn"):
+                    if del_comp_folder == "未分類":
+                        st.warning("【未分類】は消せないぞ。")
+                    else:
+                        try:
+                            # 中作文(composition)タイプかつ、そのフォルダ名のみを削除
+                            supabase.table("study_data")\
+                                .delete()\
+                                .eq("username", st.session_state.username)\
+                                .eq("type", "composition")\
+                                .eq("folder_name", del_comp_folder)\
+                                .execute()
+                            st.success(f"フォルダ【{del_comp_folder}】を中作文データごと消したぞ！")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"削除失敗だ: {e}")
             # --- 中作文用のフォルダ名変更エリア ---
             with st.expander("📁 フォルダ名を変更する"):
                 # リスニングと区別するために _comp をつける
