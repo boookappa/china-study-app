@@ -93,6 +93,26 @@ else:
         # --- ここからモード別の分岐 ---
         if listening_mode == "データ登録モード":
             # 1. フォルダ管理エリア
+
+            # --- データ登録モード内のフォルダ管理エリアへ追加 ---
+        with st.expander("🗑️ フォルダを削除する"):
+            del_folder = st.selectbox("削除したいフォルダを選択", existing_folders, key="del_folder_sel")
+            if st.button("フォルダを削除", key="delete_folder_btn"):
+                # "未分類"は消せないようにガードしておく
+                if del_folder == "未分類":
+                    st.warning("【未分類】は消せないぞ。")
+                else:
+                    try:
+                        # 該当フォルダの全データを一括削除
+                        supabase.table("study_data")\
+                            .delete()\
+                            .eq("username", st.session_state.username)\
+                            .eq("folder_name", del_folder)\
+                            .execute()
+                        st.success(f"【{del_folder}】をフォルダごと削除したぞ！")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"削除失敗だ: {e}")
             with st.expander("📁 フォルダ名を変更する"):
                 old_name = st.selectbox("変更したいフォルダを選択", existing_folders, key="rename_old_list")
                 new_name = st.text_input("新しいフォルダ名を入力", key="rename_new_list")
