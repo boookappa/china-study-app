@@ -165,7 +165,7 @@ else:
             if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
                 # --- 取得ロジックの修正例 --
                 try:
-    　　　　　　     res_records = supabase.table("study_data")\
+                    res_records = supabase.table("study_data")\
                         .select("id, audio_data, pinyin, kanji")\
                         .eq("username", st.session_state.username)\
                         .eq("type", "listening")\
