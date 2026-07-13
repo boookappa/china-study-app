@@ -192,12 +192,20 @@ else:
                     random.shuffle(shuffled_list)
                     st.session_state[shuffle_session_key] = shuffled_list
 
+                # この下のループ処理を、警告が出るものに差し替えるんだ
                 for index, record in enumerate(st.session_state[shuffle_session_key]):
                     st.markdown("---")
                     st.write(f"**🎵 問題 {index + 1}**")
-                    # データの表示
-                    if record.get("audio_data"):
-                        st.audio(record["audio_data"], format="audio/mp3")
+                    
+                    # --- ここから差し替え ---
+                    audio_val = record.get("audio_data")
+                    # URLやパスっぽければ再生、そうでなければ警告を出す
+                    if audio_val and isinstance(audio_val, str) and (audio_val.startswith("http") or audio_val.startswith("/")):
+                        st.audio(audio_val, format="audio/mp3")
+                    else:
+                        st.warning(f"この問題には有効な音声データがないぞ（データ: {audio_val}）")
+                    # --- ここまで ---
+                        
                     st.write(f"📌 ピンイン: {record.get('pinyin')}")
                     st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
 
