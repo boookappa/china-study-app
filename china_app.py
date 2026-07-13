@@ -164,25 +164,25 @@ else:
             cache_key = f"records_cache_{selected_test_folder}"
             if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
                 # --- 取得ロジックの修正例 ---
+
                 try:
-    # フィルタを最小限にして、取得後にPython側で制御する
-                    res_records = supabase.table("study_data")\
+    　　　　　　     res_records = supabase.table("study_data")\
                         .select("id, audio_data, pinyin, kanji")\
                         .eq("username", st.session_state.username)\
                         .eq("type", "listening")\
                         .eq("folder_name", selected_test_folder)\
                         .execute()
+                    aw_data = res_records.data if res_records.data else []
     
-    # 取得したデータを一旦すべてリスト化
-                    raw_data = res_records.data if res_records.data else []
+    # 【デバッグ】取得した全データを画面に表示してみる
+                    st.write("DEBUG: 取得した生データ:", raw_data)
     
-    # Python側で audio_data が空ではないものだけを抽出する
-                    records = [r for r in raw_data if r.get("audio_data") and r["audio_data"].strip() != ""]
-    
+    # フィルタリング条件を一度外して、すべてのデータを許可してみる
+    # これで表示されるなら、条件式(if r.get("audio_data")...)が厳しすぎたことが確定します
+                    records = raw_data 
                     st.session_state[cache_key] = records
                 except Exception as e:
                     st.error(f"取得エラー: {e}")
-                    st.session_state[cache_key] = []    
             # --- ここまで ---
 
             records = st.session_state.get(cache_key, [])
