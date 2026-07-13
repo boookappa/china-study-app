@@ -420,35 +420,58 @@ else:
             records = st.session_state.get(comp_cache_key, [])
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
+            # (中略：データの取得と if not records: の部分まで)
             else:
                 comp_shuffle_key = f"comp_shuffled_{selected_test_folder}"
+            
+            # 1. リセット用のキーを管理（ループの前に配置）
+                comp_reset_key = f"comp_reset_{selected_test_folder}"
+                if comp_reset_key not in st.session_state:
+                    st.session_state[comp_reset_key] = 0
+
                 if comp_shuffle_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="comp_shuf_btn"):
                     import random
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
                     st.session_state[comp_shuffle_key] = shuffled_list
+                    st.session_state[comp_reset_key] += 1  # リセット用カウンタを更新
+                    st.rerun()
 
+            # 2. ループ処理（ここを差し替えろ）
                 for index, record in enumerate(st.session_state[comp_shuffle_key]):
                     rec_id = record["id"]
                     japanese = record["japanese"]
                     kanji = record["kanji"]
+                    confirm_key = f"del_confirm_comp_{rec_id}"
+
                     st.markdown(f"---")
-                    
                     col1, col2 = st.columns([6, 1])
                     with col1:
                         st.write(f"**📝 問題 {index + 1}**")
+                
                     with col2:
-                        if st.button("🗑 削除", key=f"del_comp_{rec_id}"):
-                            try:
-                                supabase.table("study_data").delete().eq("id", rec_id).execute()
-                                st.toast("削除したぞ！")
-                                st.session_state[comp_cache_key] = [r for r in st.session_state[comp_cache_key] if r["id"] != rec_id]
-                                st.session_state[comp_shuffle_key] = [r for r in st.session_state[comp_shuffle_key] if r["id"] != rec_id]
-                            except Exception:
-                                st.error("削除失敗。")
+                    # 削除の二段階確認ロジック
+                        if st.session_state.get(confirm_key, False):
+                            if st.button("✅ 確定", key=f"yes_comp_{rec_id}"):
+                                try:
+                                    supabase.table("study_data").delete().eq("id", rec_id).execute()
+                                    del st.session_state[confirm_key]
+                                    st.session_state[comp_cache_key] = [r for r in st.session_state[comp_cache_key] if r["id"] != rec_id]
+                                    st.session_state[comp_shuffle_key] = [r for r in st.session_state[comp_shuffle_key] if r["id"] != rec_id]
+                                    st.rerun()
+                                except Exception:
+                                    st.error("削除失敗。")
+                            if st.button("❌", key=f"no_comp_{rec_id}"):
+                                st.session_state[confirm_key] = False
+                                st.rerun()
+                        else:
+                            if st.button("🗑 削除", key=f"del_comp_{rec_id}"):
+                                st.session_state[confirm_key] = True
+                                st.rerun()
 
                     st.info(f"**日本語:** {japanese}")
-                    
-                    # 💡 ここも st.toggle に変更して爆速化
-                    if st.toggle("👀 答えを見る", key=f"toggle_comp_{rec_id}"):
+                
+                # 3. シャッフルで閉じるトグル
+                    toggle_key = f"toggle_comp_{rec_id}_{st.session_state[comp_reset_key]}"
+                    if st.toggle("👀 答えを見る", key=toggle_key):
                         st.success(f"**🇨🇳 中国語:**\n{kanji}")
