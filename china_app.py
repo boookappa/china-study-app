@@ -192,7 +192,7 @@ else:
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
             
             cache_key = f"records_cache_{selected_test_folder}"
-            if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
+            if cache_key not in st.session_state or st.button("🔄 データを最新に更新（反映されない場合は下のシャッフルを押すと上手くいくと思います）", key="list_refresh_btn"):
                 # 変数をtryの外で定義しておく
                 raw_data = [] 
                 try:
@@ -369,7 +369,7 @@ else:
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", comp_folders, key="comp_test_fold_sel")
             
             comp_cache_key = f"comp_cache_{selected_test_folder}"
-            if comp_cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="comp_refresh_btn"):
+            if comp_cache_key not in st.session_state or st.button("🔄 データを最新に更新（反映されない場合は下のシャッフルを押すと上手くいくと思います）", key="comp_refresh_btn"):
                 try:
                     # ここでダミーデータ（日本語が空のレコード）を最初から除外する
                     res_comp_rec = supabase.table("study_data")\
