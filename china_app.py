@@ -326,7 +326,7 @@ else:
         def natural_sort_key(s):
             return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
         
-        existing_folders.sort(key=natural_sort_key)  
+        comp_folders.sort(key=natural_sort_key)  
 
         if comp_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（統一されたデザイン） ---
