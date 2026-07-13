@@ -322,6 +322,11 @@ else:
             
         if "未分類" not in comp_folders:
             comp_folders.append("未分類")
+        import re
+        def natural_sort_key(s):
+            return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
+        
+        existing_folders.sort(key=natural_sort_key)  
 
         if comp_mode == "データ登録モード":
             # --- 1. フォルダ管理エリア（統一されたデザイン） ---
