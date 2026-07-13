@@ -110,6 +110,11 @@ else:
             
         if "未分類" not in existing_folders:
             existing_folders.append("未分類")
+        import re
+        def natural_sort_key(s):
+            return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
+        
+        existing_folders.sort(key=natural_sort_key)
 
         # --- ここからモード別の分岐 ---
         if listening_mode == "データ登録モード":
