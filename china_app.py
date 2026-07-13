@@ -66,6 +66,27 @@ if not st.session_state.logged_in:
 # メイン画面
 else:
     st.sidebar.markdown(f"**ログイン中: {st.session_state.username}**")
+    with st.sidebar.expander("🔑 パスワードを変更"):
+        old_pw = st.text_input("現在のパスワード", type="password", key="old_pw")
+        new_pw = st.text_input("新しいパスワード", type="password", key="new_pw")
+        
+        if st.button("パスワードを変更する", key="change_pw_btn"):
+            if old_pw and new_pw:
+                # 既存の login_user を使って認証
+                if login_user(st.session_state.username, old_pw):
+                    try:
+                        new_hashed = hash_password(new_pw)
+                        supabase.table("users")\
+                            .update({"password": new_hashed})\
+                            .eq("username", st.session_state.username)\
+                            .execute()
+                        st.success("パスワードを変更したぞ！")
+                    except Exception as e:
+                        st.error(f"変更失敗: {e}")
+                else:
+                    st.error("現在のパスワードが間違っているぞ。")
+            else:
+                st.warning("両方入力しろ。")
     if st.sidebar.button("ログアウト"):
         st.session_state.logged_in = False
         st.session_state.username = None
