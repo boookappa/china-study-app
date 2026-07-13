@@ -160,15 +160,24 @@ else:
             st.subheader("🎯 リスニング・ランダムテスト")
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
             
+            # --- ここを書き換えろ ---
             cache_key = f"records_cache_{selected_test_folder}"
             if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
                 try:
+                    # 条件をシンプルにする。ここで絞りすぎるとデータが消える。
                     res_records = supabase.table("study_data").select("id, audio_data, pinyin, kanji")\
-                        .eq("username", st.session_state.username).eq("type", "listening")\
-                        .eq("folder_name", selected_test_folder).neq("audio_data", "").execute()
-                    st.session_state[cache_key] = res_records.data if res_records.data else []
-                except Exception:
+                        .eq("username", st.session_state.username)\
+                        .eq("type", "listening")\
+                        .eq("folder_name", selected_test_folder)\
+                        .execute()
+                    
+                    # 取得した後にPython側で「audio_dataが空じゃないもの」だけをフィルタリングする
+                    raw_data = res_records.data if res_records.data else []
+                    st.session_state[cache_key] = [r for r in raw_data if r.get("audio_data")]
+                except Exception as e:
+                    st.error(f"データ取得失敗: {e}")
                     st.session_state[cache_key] = []
+            # --- ここまで ---
 
             records = st.session_state.get(cache_key, [])
             if not records:
