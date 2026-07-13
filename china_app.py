@@ -249,29 +249,29 @@ else:
                     with col2:
                     # 削除ボタンを押した時に、session_stateに一時的にフラグを立てる
                     # キーを工夫して、どのIDを削除しようとしているかを保持する
-                    confirm_key = f"confirm_del_{record['id']}"
+                        confirm_key = f"confirm_del_{record['id']}"
                     
-                    if st.button(f"🗑️ 削除", key=f"btn_del_{record['id']}"):
-                        st.session_state[confirm_key] = True
+                        if st.button(f"🗑️ 削除", key=f"btn_del_{record['id']}"):
+                            st.session_state[confirm_key] = True
                     
                     # 削除フラグが立っていたら、確認ボタンを表示
-                    if st.session_state.get(confirm_key, False):
-                        st.warning("本当に消すか？")
+                        if st.session_state.get(confirm_key, False):
+                            st.warning("本当に消すか？")
                         # 横並びに「確定」と「キャンセル」を配置
-                        c_col1, c_col2 = st.columns(2)
-                        with c_col1:
-                            if st.button("✅ 確定", key=f"yes_{record['id']}"):
-                                try:
-                                    supabase.table("study_data").delete().eq("id", record["id"]).execute()
+                            c_col1, c_col2 = st.columns(2)
+                            with c_col1:
+                                if st.button("✅ 確定", key=f"yes_{record['id']}"):
+                                    try:
+                                        supabase.table("study_data").delete().eq("id", record["id"]).execute()
                                     # 削除したらフラグを消して再読み込み
-                                    del st.session_state[confirm_key]
+                                        del st.session_state[confirm_key]
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"失敗: {e}")
+                            with c_col2:
+                                if st.button("❌ 戻る", key=f"no_{record['id']}"):
+                                    st.session_state[confirm_key] = False
                                     st.rerun()
-                                except Exception as e:
-                                    st.error(f"失敗: {e}")
-                        with c_col2:
-                            if st.button("❌ 戻る", key=f"no_{record['id']}"):
-                                st.session_state[confirm_key] = False
-                                st.rerun()
                     # ----------------------
                     
                     # 音声再生と答えの確認
