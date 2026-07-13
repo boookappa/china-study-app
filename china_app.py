@@ -184,7 +184,7 @@ else:
                         .execute()
                     
                     raw_data = res_records.data if res_records.data else []
-                    st.write("DEBUG: 取得した生データ:", raw_data) # 確認用
+                    #st.write("DEBUG: 取得した生データ:", raw_data) # 確認用
                 except Exception as e:
                     st.error(f"取得エラー: {e}")
                 
@@ -203,6 +203,7 @@ else:
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
                     st.session_state[shuffle_session_key] = shuffled_list
+                display_records = [r for r in st.session_state[shuffle_session_key] if r.get("audio_data")]
 
                 # この下のループ処理を、警告が出るものに差し替えるんだ
                 for index, record in enumerate(st.session_state[shuffle_session_key]):
