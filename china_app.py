@@ -151,41 +151,41 @@ else:
 
             # --- 登録処理 ---
             # --- 登録処理の修正 ---
-        if st.button("リスニングデータを保存", key="list_save_btn"):
-            if audio_file and pinyin_input and kanji_input:
-                import time # ファイル名の重複を防ぐために時間を足す
-                try:
+            if st.button("リスニングデータを保存", key="list_save_btn"):
+                if audio_file and pinyin_input and kanji_input:
+                    import time # ファイル名の重複を防ぐために時間を足す
+                    try:
                     # ファイル名にタイムスタンプを付加する
-                    timestamp = int(time.time())
-                    unique_filename = f"{timestamp}_{audio_file.name}"
-                    storage_path = f"listening/{st.session_state.username}/{unique_filename}"
+                        timestamp = int(time.time())
+                        unique_filename = f"{timestamp}_{audio_file.name}"
+                        storage_path = f"listening/{st.session_state.username}/{unique_filename}"
                     
                     # アップロード実行
-                    supabase.storage.from_(BUCKET_NAME).upload(
-                        path=storage_path, 
-                        file=audio_file.getvalue(),
-                        file_options={"content-type": audio_file.type}
-                    )
+                        supabase.storage.from_(BUCKET_NAME).upload(
+                            path=storage_path, 
+                            file=audio_file.getvalue(),
+                            file_options={"content-type": audio_file.type}
+                        )
                     
                     # 以降の処理はさっきの通り…
                     # 2. 公開URLを取得
-                    res_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
-                    audio_url = res_url
+                        res_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+                        audio_url = res_url
                     
                     # 3. DBへ本物のURLを登録
-                    supabase.table("study_data").insert({
-                        "username": st.session_state.username,
-                        "type": "listening",
-                        "folder_name": folder_choice,
-                        "audio_data": audio_url, # ここをURLにする！
-                        "pinyin": pinyin_input,
-                        "kanji": kanji_input
-                    }).execute()
+                        supabase.table("study_data").insert({
+                            "username": st.session_state.username,
+                            "type": "listening",
+                            "folder_name": folder_choice,
+                            "audio_data": audio_url, # ここをURLにする！
+                            "pinyin": pinyin_input,
+                            "kanji": kanji_input
+                        }).execute()
                     
-                    st.success(f"【{folder_choice}】に保存したぞ！")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"保存失敗だ: {e}")
+                        st.success(f"【{folder_choice}】に保存したぞ！")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"保存失敗だ: {e}")
 
         elif listening_mode == "テストモード":
             st.subheader("🎯 リスニング・ランダムテスト")
