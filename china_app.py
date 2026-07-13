@@ -156,14 +156,13 @@ else:
                     st.warning("すべて入力しろ。")
 
         elif listening_mode == "テストモード":
-            # テストモードはこっちだけ！
             st.subheader("🎯 リスニング・ランダムテスト")
             selected_test_folder = st.selectbox("テストするフォルダを選択しろ", existing_folders, key="list_test_fold_sel")
             
-            # --- ここを書き換えろ ---
             cache_key = f"records_cache_{selected_test_folder}"
             if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
-                # --- 取得ロジックの修正例 --
+                # 変数をtryの外で定義しておく
+                raw_data = [] 
                 try:
                     res_records = supabase.table("study_data")\
                         .select("id, audio_data, pinyin, kanji")\
@@ -171,25 +170,21 @@ else:
                         .eq("type", "listening")\
                         .eq("folder_name", selected_test_folder)\
                         .execute()
-                    aw_data = res_records.data if res_records.data else []
-    
-    # 【デバッグ】取得した全データを画面に表示してみる
-                    st.write("DEBUG: 取得した生データ:", raw_data)
-    
-    # フィルタリング条件を一度外して、すべてのデータを許可してみる
-    # これで表示されるなら、条件式(if r.get("audio_data")...)が厳しすぎたことが確定します
-                    records = raw_data 
-                    st.session_state[cache_key] = records
+                    
+                    raw_data = res_records.data if res_records.data else []
+                    st.write("DEBUG: 取得した生データ:", raw_data) # 確認用
                 except Exception as e:
                     st.error(f"取得エラー: {e}")
-            # --- ここまで ---
+                
+                # 取得したデータをセッションに保存
+                st.session_state[cache_key] = raw_data
 
             records = st.session_state.get(cache_key, [])
+            
             if not records:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
             else:
-                # (以降のシャッフル・表示処理はそのままここへ)
-                # ...
+                # シャッフルと表示処理
                 shuffle_session_key = f"list_shuffled_{selected_test_folder}"
                 if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
                     import random
@@ -198,8 +193,13 @@ else:
                     st.session_state[shuffle_session_key] = shuffled_list
 
                 for index, record in enumerate(st.session_state[shuffle_session_key]):
-                # (以下、表示・削除・答え確認のループ処理をここに書く)
-                    pass
+                    st.markdown("---")
+                    st.write(f"**🎵 問題 {index + 1}**")
+                    # データの表示
+                    if record.get("audio_data"):
+                        st.audio(record["audio_data"], format="audio/mp3")
+                    st.write(f"📌 ピンイン: {record.get('pinyin')}")
+                    st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
 
     # =========================================================================
     # 【📝 2. 中作文・タブ】
