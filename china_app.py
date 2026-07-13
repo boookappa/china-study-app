@@ -129,12 +129,31 @@ else:
             pinyin_input = st.text_input("ピンインを手入力", key="list_pinyin")
             kanji_input = st.text_input("簡体字表記を手入力", key="list_kanji")
 
+            # --- 登録処理 ---
             if st.button("リスニングデータを保存", key="list_save_btn"):
                 if audio_file and pinyin_input and kanji_input:
-                    st.success(f"データをフォルダ【{folder_choice}】に保存したぞ！")
-                    st.rerun()
+                    try:
+                        # 1. ストレージへアップロード（ここはお前の既存処理を入れろ）
+                        # path = f"audio/{st.session_state.username}/{audio_file.name}"
+                        # supabase.storage.from_(BUCKET_NAME).upload(path, audio_file.getvalue())
+                        # audio_url = ...
+                        
+                        # 2. DBへ登録
+                        supabase.table("study_data").insert({
+                            "username": st.session_state.username,
+                            "type": "listening",
+                            "folder_name": folder_choice,
+                            "audio_data": "ここにURLを入れる", 
+                            "pinyin": pinyin_input,
+                            "kanji": kanji_input
+                        }).execute()
+                        
+                        st.success(f"【{folder_choice}】に保存したぞ！")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"保存失敗だ: {e}")
                 else:
-                    st.warning("音声、ピンイン、簡体字をすべて入力しろ。")
+                    st.warning("すべて入力しろ。")
 
         elif listening_mode == "テストモード":
             # テストモードはこっちだけ！
