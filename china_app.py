@@ -232,15 +232,19 @@ else:
                     
                     # 音声再生
                     st.audio(record["audio_data"], format="audio/mp3")
-                    st.write(f"📌 ピンイン: {record.get('pinyin')}")
-                    st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
                     
-                    # --- 削除ボタンの追加 ---
+                    # --- ここで答えを隠す ---
+                    with st.expander("👁️ 答えを確認する"):
+                        st.write(f"📌 ピンイン: {record.get('pinyin')}")
+                        st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
+                    # ---------------------
+                    
+                    # 削除ボタン
                     if st.button(f"🗑️ このデータを削除", key=f"del_{record['id']}"):
                         try:
                             supabase.table("study_data").delete().eq("id", record["id"]).execute()
                             st.success("削除したぞ！")
-                            st.rerun() # 画面を更新して消す
+                            st.rerun()
                         except Exception as e:
                             st.error(f"削除失敗だ: {e}")
 
