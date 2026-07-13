@@ -163,8 +163,7 @@ else:
             # --- ここを書き換えろ ---
             cache_key = f"records_cache_{selected_test_folder}"
             if cache_key not in st.session_state or st.button("🔄 データを最新に更新", key="list_refresh_btn"):
-                # --- 取得ロジックの修正例 ---
-
+                # --- 取得ロジックの修正例 --
                 try:
     　　　　　　     res_records = supabase.table("study_data")\
                         .select("id, audio_data, pinyin, kanji")\
