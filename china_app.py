@@ -123,7 +123,7 @@ else:
                         st.warning("名前を入力しろ。")
 
             # 2. データ登録エリア
-            st.subheader("📝 音声データの新規登録（すみません今登録できなくなってます）")
+            st.subheader("📝 音声データの新規登録（音声は、音読さんで中国語を入力して、xiaoxiaoで読ませてダウンロードし、下でアップロードしてください　https://ondoku3.com/ja/　）")
             folder_choice = st.selectbox("既存のフォルダから選ぶ", existing_folders, key="list_fold_sel")
             audio_file = st.file_uploader("音声ファイルをアップロード", type=["mp3", "wav", "m4a"], key="list_audio")
             pinyin_input = st.text_input("ピンインを手入力", key="list_pinyin")
