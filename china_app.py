@@ -218,7 +218,8 @@ else:
             else:
                 # シャッフルと表示処理
                 shuffle_session_key = f"list_shuffled_{selected_test_folder}"
-                # リセット用のキーをsession_stateで管理する
+                
+                # リセット用のキーを管理
                 expander_reset_key = f"expander_reset_{selected_test_folder}"
                 if expander_reset_key not in st.session_state:
                     st.session_state[expander_reset_key] = 0
@@ -228,10 +229,13 @@ else:
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
                     st.session_state[shuffle_session_key] = shuffled_list
-                    # シャッフルボタンが押されたらリセット用の値を更新する
                     st.session_state[expander_reset_key] += 1
-                    st.rerun() # すぐに画面を更新
+                    st.rerun()
 
+                # ★ここで valid_records を必ず定義する！
+                valid_records = [r for r in st.session_state[shuffle_session_key] if r.get("audio_data") and r.get("pinyin") and r.get("kanji")]
+
+             
                 # この下のループ処理を、警告が出るものに差し替えるんだ
                 for index, record in enumerate(valid_records):
                     st.markdown("---")
