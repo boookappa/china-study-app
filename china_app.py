@@ -203,10 +203,10 @@ else:
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
                     st.session_state[shuffle_session_key] = shuffled_list
-                display_records = [r for r in st.session_state[shuffle_session_key] if r.get("audio_data")]
+                valid_records = [r for r in st.session_state[shuffle_session_key] if r.get("audio_data") and r.get("pinyin") and r.get("kanji")]
 
                 # この下のループ処理を、警告が出るものに差し替えるんだ
-                for index, record in enumerate(st.session_state[shuffle_session_key]):
+                for index, record in enumerate(valid_records):
                     st.markdown("---")
                     st.write(f"**🎵 問題 {index + 1}**")
                     
