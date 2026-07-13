@@ -228,25 +228,29 @@ else:
                 # この下のループ処理を、警告が出るものに差し替えるんだ
                 for index, record in enumerate(valid_records):
                     st.markdown("---")
-                    st.write(f"**🎵 問題 {index + 1}**")
                     
-                    # 音声再生
+                    # --- 横並びレイアウト ---
+                    # カラムを2つ作る。左側にタイトル(比率8)、右側にボタン(比率2)
+                    col1, col2 = st.columns([8, 2])
+                    
+                    with col1:
+                        st.write(f"**🎵 問題 {index + 1}**")
+                    with col2:
+                        # 削除ボタン。キーを工夫してIDを渡す
+                        if st.button(f"🗑️ 削除", key=f"del_{record['id']}"):
+                            try:
+                                supabase.table("study_data").delete().eq("id", record["id"]).execute()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"失敗: {e}")
+                    # ----------------------
+                    
+                    # 音声再生と答えの確認
                     st.audio(record["audio_data"], format="audio/mp3")
                     
-                    # --- ここで答えを隠す ---
                     with st.expander("👁️ 答えを確認する"):
                         st.write(f"📌 ピンイン: {record.get('pinyin')}")
                         st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
-                    # ---------------------
-                    
-                    # 削除ボタン
-                    if st.button(f"🗑️ このデータを削除", key=f"del_{record['id']}"):
-                        try:
-                            supabase.table("study_data").delete().eq("id", record["id"]).execute()
-                            st.success("削除したぞ！")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"削除失敗だ: {e}")
 
     # =========================================================================
     # 【📝 2. 中作文・タブ】
