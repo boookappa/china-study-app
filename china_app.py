@@ -37,7 +37,7 @@ def register_user(username, password):
 
 # ログイン画面
 if not st.session_state.logged_in:
-    st.info("💡 既にアカウントがある場合は左側からログイン、初めての場合は右側からアカウントを作成してくれ。")
+    st.info("💡 既にアカウントがある場合は左側からログイン、初めての場合は右側からアカウントを作成しろ。ユーザー名「nao7」（パスワード「123」）にはすでにいくつかのデータが入っているので自由に使ってもらっていいです。ただしデータは消さないでね")
     col_login, col_register = st.columns(2)
 
     with col_login:
@@ -48,7 +48,7 @@ if not st.session_state.logged_in:
             if username and password and login_user(username, password):
                 st.session_state.logged_in = True
                 st.session_state.username = username
-                st.success(f"ログイン成功だ。")
+                st.success(f"ログイン成功。")
                 st.rerun()  # 画面切り替え時のみ使用
             else:
                 st.error("ユーザー名かパスワードが間違っているか、未入力だぞ。")
