@@ -217,13 +217,20 @@ else:
                 st.info(f"フォルダ【{selected_test_folder}】にはまだデータがないぞ。")
             else:
                 # シャッフルと表示処理
-                shuffle_session_key = f"list_shuffled_{selected_test_folder}"
+               shuffle_session_key = f"list_shuffled_{selected_test_folder}"
+                # リセット用のキーをsession_stateで管理する
+                expander_reset_key = f"expander_reset_{selected_test_folder}"
+                if expander_reset_key not in st.session_state:
+                    st.session_state[expander_reset_key] = 0
+
                 if shuffle_session_key not in st.session_state or st.button("🔁 このフォルダの問題をシャッフル", key="list_shuf_btn"):
                     import random
                     shuffled_list = list(records)
                     random.shuffle(shuffled_list)
                     st.session_state[shuffle_session_key] = shuffled_list
-                valid_records = [r for r in st.session_state[shuffle_session_key] if r.get("audio_data") and r.get("pinyin") and r.get("kanji")]
+                    # シャッフルボタンが押されたらリセット用の値を更新する
+                    st.session_state[expander_reset_key] += 1
+                    st.rerun() # すぐに画面を更新
 
                 # この下のループ処理を、警告が出るものに差し替えるんだ
                 for index, record in enumerate(valid_records):
@@ -247,11 +254,11 @@ else:
                     
                     # 音声再生と答えの確認
                     st.audio(record["audio_data"], format="audio/mp3")
-                    
-                    with st.expander("👁️ 答えを確認する"):
+                    expander_key = f"expander_{record['id']}_{st.session_state[expander_reset_key]}"
+                    with st.expander("👁️ 答えを確認する", key=expander_key):
                         st.write(f"📌 ピンイン: {record.get('pinyin')}")
                         st.write(f"🇨🇳 簡体字: {record.get('kanji')}")
-
+                    
     # =========================================================================
     # 【📝 2. 中作文・タブ】
     # =========================================================================
